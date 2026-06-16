@@ -758,7 +758,7 @@ const CloudSync = {
         console.log('=== syncFromCloud开始 ===');
         
         const firebaseUrl = 'https://galgame-a5758-default-rtdb.asia-southeast1.firebasedatabase.app/games.json';
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@v1.00/games.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/games.json';
         
         this.config.gamesDataVersion = '2026032403';
         this.config.localDataVersion = null;
