@@ -1603,9 +1603,11 @@ const App = {
     const isiPhone = /iphone|ipod/i.test(ua);
     const isMobile = isAndroid || isiPhone;
     const isTWA = /twa|trusted-web-activity|bubblewrap/i.test(ua);
+    // MIT App Inventor 的 WebViewer 和 Android WebView 也放行
+    const isWebView = /wv|webview|appinventor/i.test(ua);
     const screenWidth = window.screen.width;
 
-    if (!isMobile && !isTWA) {
+    if (!isMobile && !isTWA && !isWebView) {
         document.addEventListener('DOMContentLoaded', () => {
             document.body.style.cssText = 'margin:0;background:linear-gradient(135deg,#0f172a,#1e1b4b);overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh;';
             document.body.innerHTML = `
