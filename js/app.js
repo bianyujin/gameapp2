@@ -42,6 +42,7 @@ const App = {
         this.checkGuideBanner();
         this.autoSync();
         this.checkForUpdates();
+        this.checkAppVersion();
         
         const addGameFab = document.getElementById('addGameFab');
         if (addGameFab) {
@@ -1402,7 +1403,7 @@ const App = {
     },
 
     async checkForUpdates() {
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@v1.00/games.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@main/games.json';
         const localVersion = localStorage.getItem('gamehub_local_data_version');
         
         try {
@@ -1448,6 +1449,122 @@ const App = {
         }
     },
 
+    async checkAppVersion() {
+        try {
+            const configUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@main/config.json';
+            const resp = await fetch(configUrl + '?t=' + Date.now());
+            if (!resp.ok) return;
+            
+            const remoteConfig = await resp.json();
+            const localVersion = '2.0.0';
+            const remoteVersion = remoteConfig.latest_version || remoteConfig.app_version;
+            const minVersion = remoteConfig.min_supported_version || '1.0.0';
+            const forceUpdate = remoteConfig.force_update === true;
+
+            if (!remoteVersion) return;
+
+            const needsUpdate = this._compareVersions(localVersion, remoteVersion) < 0;
+            const belowMinimum = this._compareVersions(localVersion, minVersion) < 0;
+
+            if (needsUpdate) {
+                const note = remoteConfig.update_note || '发现新版本';
+                const downloadUrl = remoteConfig.update_url || '';
+                
+                if (belowMinimum || forceUpdate) {
+                    this.showForceUpdateModal(remoteVersion, note, downloadUrl);
+                } else {
+                    this.showOptionalUpdateModal(remoteVersion, note, downloadUrl);
+                }
+            }
+
+            localStorage.setItem('gamehub_remote_app_version', remoteVersion);
+        } catch (e) {
+            console.log('检查App版本失败:', e);
+        }
+    },
+
+    _compareVersions(v1, v2) {
+        const parts1 = v1.split('.').map(Number);
+        const parts2 = v2.split('.').map(Number);
+        const len = Math.max(parts1.length, parts2.length);
+        for (let i = 0; i < len; i++) {
+            const p1 = parts1[i] || 0;
+            const p2 = parts2[i] || 0;
+            if (p1 > p2) return 1;
+            if (p1 < p2) return -1;
+        }
+        return 0;
+    },
+
+    showForceUpdateModal(version, note, url) {
+        const existing = document.getElementById('forceUpdateModal');
+        if (existing) existing.remove();
+
+        const modalHtml = `
+            <div id="forceUpdateModal" class="modal" style="z-index:99999;">
+                <div class="modal-backdrop"></div>
+                <div class="modal-content" style="max-width:340px;border-radius:16px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:28px 20px;text-align:center;">
+                        <div style="font-size:48px;margin-bottom:8px;">🚀</div>
+                        <h3 style="color:#fff;margin:0;font-size:18px;">发现新版本 v${version}</h3>
+                        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:13px;">${note}</p>
+                    </div>
+                    <div style="padding:24px 20px;text-align:center;">
+                        <p style="color:#64748b;font-size:14px;margin-bottom:20px;line-height:1.6;">
+                            当前版本过低，必须更新后才能继续使用。
+                            <br>请下载最新版本安装。
+                        </p>
+                        <a href="${url}" target="_blank" rel="noopener"
+                           class="btn btn-primary" style="width:100%;display:inline-block;text-align:center;text-decoration:none;padding:12px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:600;font-size:15px;box-shadow:0 4px 15px rgba(99,102,241,0.4);">
+                            立即下载更新
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        document.addEventListener('keydown', function blockEsc(e) {
+            if (e.key === 'Escape') e.preventDefault();
+        }, { capture: true });
+    },
+
+    showOptionalUpdateModal(version, note, url) {
+        if (localStorage.getItem('gamehub_update_dismissed') === version) return;
+
+        const existing = document.getElementById('optionalUpdateModal');
+        if (existing) existing.remove();
+
+        const modalHtml = `
+            <div id="optionalUpdateModal" class="modal">
+                <div class="modal-backdrop" onclick="App.dismissOptionalUpdate('${version}')"></div>
+                <div class="modal-content" style="max-width:320px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">新版本可用</h3>
+                        <button class="close-btn" onclick="App.dismissOptionalUpdate('${version}')">&times;</button>
+                    </div>
+                    <div class="modal-body" style="text-align:center;padding:16px;">
+                        <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">
+                            发现新版本 v${version}：${note}
+                        </p>
+                    </div>
+                    <div class="modal-footer" style="flex-direction:column;gap:8px;">
+                        <a href="${url}" target="_blank" rel="noopener"
+                           class="btn btn-primary" style="width:100%;display:inline-block;text-align:center;text-decoration:none;">立即更新</a>
+                        <button class="btn btn-secondary" style="width:100%;" onclick="App.dismissOptionalUpdate('${version}')">稍后再说</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    dismissOptionalUpdate(version) {
+        localStorage.setItem('gamehub_update_dismissed', version);
+        const modal = document.getElementById('optionalUpdateModal');
+        if (modal) modal.remove();
+    },
+
     showUpdatePrompt() {
         const modalHtml = `
             <div id="updatePromptModal" class="modal">
@@ -1483,13 +1600,20 @@ const App = {
     const isAndroid = /android/i.test(ua);
     const isiPhone = /iphone|ipod/i.test(ua);
     const isMobile = isAndroid || isiPhone;
+    const isTWA = /twa|trusted-web-activity|bubblewrap/i.test(ua);
     const screenWidth = window.screen.width;
 
-    // 屏幕宽度大于768px视为非手机（排除平板）
-    if (!isMobile || screenWidth > 768) {
+    if (!isMobile && !isTWA) {
         document.addEventListener('DOMContentLoaded', () => {
-            document.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
-            document.body.innerHTML = '';
+            document.body.style.cssText = 'margin:0;background:linear-gradient(135deg,#0f172a,#1e1b4b);overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+            document.body.innerHTML = `
+                <div style="text-align:center;padding:40px;color:#94a3b8;">
+                    <div style="font-size:64px;margin-bottom:20px;">📱</div>
+                    <h2 style="color:#e2e8f0;margin-bottom:12px;font-size:20px;">请使用手机访问</h2>
+                    <p style="font-size:14px;line-height:1.6;max-width:300px;margin:0 auto;">
+                        本应用仅支持手机端使用<br>请用手机浏览器打开或下载APK安装
+                    </p>
+                </div>`;
         });
         return;
     }

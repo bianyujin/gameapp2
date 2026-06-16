@@ -1,42 +1,91 @@
-const CACHE_NAME = 'gamehub-v1';
+const CACHE_NAME = 'gameacg-v2.0';
+const APP_VERSION = '2.0.0';
+
 const urlsToCache = [
-  './',
-  './index.html',
-  './css/styles.css',
-  './js/app.js',
-  './manifest.json'
+  '/',
+  '/index.html',
+  '/css/styles.css',
+  '/js/app.js',
+  '/js/cloud-sync.js',
+  '/js/review.js',
+  '/js/admin.js',
+  '/config.json',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
+      .then(cache => {
+        return cache.addAll(urlsToCache).catch(err => {
+          console.log('预缓存部分失败（离线时正常）:', err);
+        });
       })
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (url.pathname.includes('/games.json') || url.pathname.includes('cdn.jsdelivr.net')) {
+    event.respondWith(
+      fetch(request).catch(() => new Response(JSON.stringify([]), {
+        headers: { 'Content-Type': 'application/json' }
+      }))
+    );
+    return;
+  }
+
+  if (request.method !== 'GET') return;
+
+  if (url.origin === self.location.origin && url.pathname === '/config.json') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request)
+      .then(cached => {
+        if (cached) {
+          const fetched = fetch(request).then(response => {
+            if (response && response.status === 200) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+            }
+            return response;
+          }).catch(() => cached);
+          return fetched;
+        }
+        return fetch(request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => {
+          if (request.destination === 'document') {
+            return caches.match('/index.html');
+          }
+          return new Response('', { status: 408 });
+        });
+      })
   );
 });
