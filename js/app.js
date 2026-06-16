@@ -1477,4 +1477,28 @@ const App = {
     }
 };
 
+// 仅允许移动设备访问，电脑/平板端显示提示
+(function() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroid = /android/i.test(ua);
+    const isiPhone = /iphone|ipod/i.test(ua);
+    const isMobile = isAndroid || isiPhone;
+    const screenWidth = window.screen.width;
+
+    // 屏幕宽度大于768px视为非手机（排除平板）
+    if (!isMobile || screenWidth > 768) {
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff;font-family:-apple-system,sans-serif;text-align:center;padding:40px">
+                    <div>
+                        <div style="font-size:64px;margin-bottom:20px">📱</div>
+                        <h1 style="font-size:22px;margin-bottom:12px;font-weight:600">请使用手机访问</h1>
+                        <p style="font-size:14px;color:#94a3b8;max-width:300px;line-height:1.6">本应用仅支持 Android 手机端访问<br>请用手机浏览器打开此链接</p>
+                    </div>
+                </div>`;
+        });
+        return;
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', () => App.init());
