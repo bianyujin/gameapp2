@@ -1,0 +1,24 @@
+{
+  "name": "gamehub-android",
+  "version": "1.0.0",
+  "description": "GameHub 游戏整合平台 - 安卓APK应用",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "build": "node scripts/build.js",
+    "apk:init": "node scripts/init-capacitor.js",
+    "apk:sync": "npx cap sync",
+    "apk:build": "cd android && ./gradlew assembleDebug",
+    "apk:release": "cd android && ./gradlew assembleRelease"
+  },
+  "keywords": ["game", "android", "apk", "pwa"],
+  "author": "GameHub Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "serve": "^14.2.1"
+  },
+  "dependencies": {}
+}

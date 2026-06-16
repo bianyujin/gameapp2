@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV转JSON工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        h1 {
+            color: #60a5fa;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .step h3 {
+            color: #a78bfa;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #e2e8f0;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+        .success {
+            background: #065f46;
+            color: #6ee7b7;
+            display: block;
+        }
+        .error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            display: block;
+        }
+        .info {
+            background: #1e3a8a;
+            color: #93c5fd;
+            display: block;
+        }
+        .download-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+        .download-btn {
+            background: #10b981;
+            width: 100%;
+            font-size: 16px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .download-btn:hover {
+            background: #059669;
+        }
+        .field-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #334155;
+        }
+        .field-item {
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: #1e293b;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .field-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .field-item label {
+            flex: 1;
+            margin: 0;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .preview {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #334155;
+        }
+        .tips {
+            background: #1e3a8a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .tips h4 {
+            color: #93c5fd;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .tips li {
+            margin-bottom: 8px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            flex: 1;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        .warning {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSV转JSON工具</h1>
+    <p class="subtitle">将Notion导出的CSV文件转换为APP所需的JSON格式（修复版）</p>
+
+    <div class="step">
+        <h3>步骤1：上传CSV文件</h3>
+        <div class="form-group">
+            <label>选择从Notion导出的CSV文件：</label>
+            <input type="file" id="csvFile" accept=".csv">
+        </div>
+        <button onclick="parseCSV()">解析CSV文件</button>
+        <div id="parseResult" class="result"></div>
+    </div>
+
+    <div class="step" id="fieldStep" style="display: none;">
+        <h3>步骤2：选择私有字段</h3>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 10px;">
+            勾选的字段将只对管理员可见（普通用户看不到）
+        </p>
+        <div style="margin-bottom: 10px;">
+            <button onclick="selectAll()">全选</button>
+            <button onclick="deselectAll()">全不选</button>
+            <button onclick="autoSelectPrivate()">自动选择私有字段</button>
+        </div>
+        <div class="field-list" id="fieldList"></div>
+        <div id="fieldCount" style="margin-top: 10px; color: #94a3b8; font-size: 14px;"></div>
+        <button onclick="convertToJSON()" style="margin-top: 15px; background: #10b981;">生成JSON</button>
+        <div id="convertResult" class="result"></div>
+    </div>
+
+    <div class="step" id="downloadStep" style="display: none;">
+        <h3>步骤3：下载并上传</h3>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="gameCount">0</div>
+                <div class="stat-label">游戏数量</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fieldCountTotal">0</div>
+                <div class="stat-label">字段总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="privateCount">0</div>
+                <div class="stat-label">私有字段</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fileSize">0</div>
+                <div class="stat-label">文件大小</div>
+            </div>
+        </div>
+        <div class="info" style="margin-top: 15px;">
+            转换成功！请下载JSON文件并上传到GitHub仓库
+        </div>
+        <div class="preview" id="preview"></div>
+        <button class="download-btn" onclick="downloadJSON()">下载 games.json</button>
+    </div>
+
+    <div class="tips">
+        <h4>使用说明</h4>
+        <ul>
+            <li><strong>步骤1：</strong>从Notion导出CSV文件（包含所有游戏数据）</li>
+            <li><strong>步骤2：</strong>选择需要隐藏的私有字段（如：搜索、更新日志、FB等）</li>
+            <li><strong>步骤3：</strong>下载生成的games.json文件</li>
+            <li><strong>步骤4：</strong>将games.json上传到GitHub仓库根目录（替换旧文件）</li>
+            <li><strong>完成！</strong>APP同步后即可看到最新数据</li>
+        </ul>
+    </div>
+
+    <script>
+        let csvData = [];
+        let allFields = [];
+        let jsonData = '';
+
+        function parseCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('parseResult', '请先选择CSV文件', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const result = parseCSVText(text);
+                    
+                    if (result.errors.length > 0) {
+                        console.warn('CSV解析警告:', result.errors);
+                    }
+                    
+                    if (result.records.length < 1) {
+                        showResult('parseResult', 'CSV文件格式错误或为空', 'error');
+                        return;
+                    }
+
+                    allFields = result.headers.filter(h => h && h.trim());
+                    csvData = result.records;
+
+                    if (csvData.length === 0) {
+                        showResult('parseResult', 'CSV文件中没有有效数据', 'error');
+                        return;
+                    }
+
+                    showResult('parseResult', `解析成功！共 ${csvData.length} 行数据，${allFields.length} 个字段`, 'success');
+                    
+                    displayFields();
+                    document.getElementById('fieldStep').style.display = 'block';
+                    document.getElementById('downloadStep').style.display = 'none';
+                    
+                } catch (error) {
+                    showResult('parseResult', '解析失败：' + error.message, 'error');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSVText(text) {
+            const records = [];
+            const errors = [];
+            const headers = [];
+            
+            let i = 0;
+            const len = text.length;
+            
+            function parseRow() {
+                const row = [];
+                let field = '';
+                let inQuotes = false;
+                
+                while (i < len) {
+                    const char = text[i];
+                    
+                    if (inQuotes) {
+                        if (char === '"') {
+                            if (i + 1 < len && text[i + 1] === '"') {
+                                field += '"';
+                                i += 2;
+                            } else {
+                                inQuotes = false;
+                                i++;
+                            }
+                        } else {
+                            field += char;
+                            i++;
+                        }
+                    } else {
+                        if (char === '"') {
+                            inQuotes = true;
+                            i++;
+                        } else if (char === ',') {
+                            row.push(field.trim());
+                            field = '';
+                            i++;
+                        } else if (char === '\r') {
+                            i++;
+                            if (i < len && text[i] === '\n') {
+                                i++;
+                            }
+                            row.push(field.trim());
+                            return row;
+                        } else if (char === '\n') {
+                            i++;
+                            row.push(field.trim());
+                            return row;
+                        } else {
+                            field += char;
+                            i++;
+                        }
+                    }
+                }
+                
+                if (field || row.length > 0) {
+                    row.push(field.trim());
+                }
+                
+                return row.length > 0 ? row : null;
+            }
+            
+            const headerRow = parseRow();
+            if (!headerRow || headerRow.length === 0) {
+                return { headers: [], records: [], errors: ['无法解析表头'] };
+            }
+            
+            headerRow.forEach(h => headers.push(h));
+            
+            while (i < len) {
+                const row = parseRow();
+                if (row && row.some(cell => cell !== '')) {
+                    const record = {};
+                    headers.forEach((header, idx) => {
+                        record[header] = row[idx] !== undefined ? row[idx] : '';
+                    });
+                    records.push(record);
+                }
+            }
+            
+            return { headers, records, errors };
+        }
+
+        function displayFields() {
+            const fieldList = document.getElementById('fieldList');
+            const privateKeywords = ['搜索', '更新日志', 'FB', '版本及更新时间', '视频'];
+            
+            fieldList.innerHTML = allFields.map(field => {
+                const isPrivate = privateKeywords.some(kw => field.includes(kw));
+                const checked = isPrivate ? 'checked' : '';
+                return `
+                    <div class="field-item">
+                        <input type="checkbox" id="field_${indexToId(field)}" ${checked}>
+                        <label for="field_${indexToId(field)}">${escapeHtml(field)}</label>
+                    </div>
+                `;
+            }).join('');
+            
+            updateFieldCount();
+            
+            document.querySelectorAll('#fieldList input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', updateFieldCount);
+            });
+        }
+
+        function indexToId(field) {
+            return field.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateFieldCount() {
+            const total = allFields.length;
+            const selected = document.querySelectorAll('#fieldList input[type="checkbox"]:checked').length;
+            document.getElementById('fieldCount').textContent = `已选择 ${selected} / ${total} 个字段作为私有字段`;
+        }
+
+        function selectAll() {
+            document.querySelectorAll('#fieldList input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+            });
+            updateFieldCount();
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('#fieldList input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateFieldCount();
+        }
+
+        function autoSelectPrivate() {
+            const privateKeywords = ['搜索', '更新日志', 'FB', '版本及更新时间', '视频'];
+            document.querySelectorAll('#fieldList input[type="checkbox"]').forEach(cb => {
+                const fieldId = cb.id.replace('field_', '');
+                const isPrivate = privateKeywords.some(kw => fieldId.includes(kw) || allFields.find(f => indexToId(f) === fieldName && f.includes(kw)));
+                cb.checked = isPrivate;
+            });
+            updateFieldCount();
+        }
+
+        function convertToJSON() {
+            if (csvData.length === 0) {
+                showResult('convertResult', '没有数据可转换', 'error');
+                return;
+            }
+
+            const privateFields = [];
+            document.querySelectorAll('#fieldList input[type="checkbox"]:checked').forEach(cb => {
+                const fieldId = cb.id.replace('field_', '');
+                const fieldName = allFields.find(f => indexToId(f) === fieldId);
+                if (fieldName) {
+                    privateFields.push(fieldName);
+                }
+            });
+
+            const games = csvData.map((row, index) => {
+                const game = {
+                    id: index + 1,
+                    icon: '🎮',
+                    category: '其他',
+                    rating: 0,
+                    downloads: '-',
+                    description: '',
+                    updateDate: new Date().toISOString(),
+                    isFavorite: false,
+                    _rawData: {},
+                    privateData: {}
+                };
+
+                allFields.forEach(field => {
+                    const value = row[field] || '';
+                    
+                    game._rawData[field] = value;
+                    
+                    const fieldLower = field.toLowerCase().replace(/[\[\]（）\(\)\s]/g, '');
+                    if (fieldLower.includes('游戏名') || fieldLower.includes('游戏名称') || fieldLower.includes('title')) {
+                        if (!game.title || (value && value !== '未命名')) {
+                            game.title = value || '未命名';
+                        }
+                    }
+                    
+                    if (field === '类型' || field === '分类' || field === '类别' || fieldLower.includes('类型')) {
+                        if (value) {
+                            game.category = value;
+                        }
+                    }
+                    
+                    if (privateFields.includes(field)) {
+                        game.privateData[field] = value;
+                    }
+                });
+
+                if (!game.title) {
+                    for (const field of allFields) {
+                        const value = row[field] || '';
+                        const fieldLower = field.toLowerCase().replace(/[\[\]（）\(\)\s]/g, '');
+                        if (fieldLower.includes('游戏名') || fieldLower.includes('游戏名称')) {
+                            game.title = value || '未命名';
+                            break;
+                        }
+                    }
+                }
+
+                if (!game.title) {
+                    game.title = '未命名';
+                }
+
+                return game;
+            });
+
+            jsonData = JSON.stringify(games, null, 2);
+            
+            const sizeKB = (new Blob([jsonData]).size / 1024).toFixed(1);
+            const sizeDisplay = sizeKB > 1024 ? (sizeKB / 1024).toFixed(2) + ' MB' : sizeKB + ' KB';
+            
+            document.getElementById('gameCount').textContent = games.length;
+            document.getElementById('fieldCountTotal').textContent = allFields.length;
+            document.getElementById('privateCount').textContent = privateFields.length;
+            document.getElementById('fileSize').textContent = sizeDisplay;
+            document.getElementById('preview').textContent = jsonData.substring(0, 2000) + '\n...';
+            document.getElementById('downloadStep').style.display = 'block';
+            
+            showResult('convertResult', `转换成功！`, 'success');
+        }
+
+        function downloadJSON() {
+            if (!jsonData) {
+                alert('请先生成JSON');
+                return;
+            }
+
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'games.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'result ' + type;
+        }
+    </script>
+</body>
+</html>
