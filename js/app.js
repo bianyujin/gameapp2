@@ -1,3 +1,5 @@
+const APP_VERSION = '2.0.0';
+
 const App = {
     games: [],
     isAdmin: false,
@@ -1403,7 +1405,7 @@ const App = {
     },
 
     async checkForUpdates() {
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@main/games.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/games.json';
         const localVersion = localStorage.getItem('gamehub_local_data_version');
         
         try {
@@ -1451,12 +1453,12 @@ const App = {
 
     async checkAppVersion() {
         try {
-            const configUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp@main/config.json';
+            const configUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/config.json';
             const resp = await fetch(configUrl + '?t=' + Date.now());
             if (!resp.ok) return;
             
             const remoteConfig = await resp.json();
-            const localVersion = '2.0.0';
+            const localVersion = APP_VERSION;
             const remoteVersion = remoteConfig.latest_version || remoteConfig.app_version;
             const minVersion = remoteConfig.min_supported_version || '1.0.0';
             const forceUpdate = remoteConfig.force_update === true;

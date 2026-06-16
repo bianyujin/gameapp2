@@ -2,15 +2,15 @@ const CACHE_NAME = 'gameacg-v2.0';
 const APP_VERSION = '2.0.0';
 
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/cloud-sync.js',
-  '/js/review.js',
-  '/js/admin.js',
-  '/config.json',
-  '/manifest.json'
+  '/gameapp2/',
+  '/gameapp2/index.html',
+  '/gameapp2/css/styles.css',
+  '/gameapp2/js/app.js',
+  '/gameapp2/js/cloud-sync.js',
+  '/gameapp2/js/review.js',
+  '/gameapp2/js/admin.js',
+  '/gameapp2/config.json',
+  '/gameapp2/manifest.json'
 ];
 
 self.addEventListener('install', event => {
@@ -82,7 +82,7 @@ self.addEventListener('fetch', event => {
           return response;
         }).catch(() => {
           if (request.destination === 'document') {
-            return caches.match('/index.html');
+            return caches.match('/gameapp2/index.html');
           }
           return new Response('', { status: 408 });
         });
