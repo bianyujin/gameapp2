@@ -32,19 +32,34 @@ const App = {
     carouselIndex: 0,
     carouselInterval: null,
     nextId: 51,
+    // 检测是否在 WebView 环境（MIT App Inventor / Android WebView）
+    isWebViewEnv: (function() {
+        try {
+            const ua = navigator.userAgent.toLowerCase();
+            return /wv|webview|appinventor/i.test(ua) || !window.fetch || !localStorage;
+        } catch(e) { return true; }
+    })(),
 
     init() {
         this.isAdmin = localStorage.getItem('gamehub_is_admin') === 'true';
         this.loadDarkMode();
         this.loadData();
         this.bindEvents();
-        this.render();
+        this.render();  // 先渲染UI，确保按钮可用
         this.startCarousel();
-        this.loadRandomImage();
-        this.checkGuideBanner();
-        this.autoSync();
-        this.checkForUpdates();
-        this.checkAppVersion();
+        // WebView 环境跳过网络请求，避免阻塞
+        if (!this.isWebViewEnv) {
+            this.loadRandomImage();
+            this.checkGuideBanner();
+            this.autoSync();
+            this.checkForUpdates();
+            this.checkAppVersion();
+        } else {
+            // WebView 环境下隐藏图片占位符，直接用纯色背景
+            var ph = document.getElementById('imagePlaceholder');
+            if (ph) ph.style.display = 'none';
+            console.log('WebView环境：已跳过网络请求');
+        }
         
         const addGameFab = document.getElementById('addGameFab');
         if (addGameFab) {
@@ -171,34 +186,37 @@ const App = {
     },
 
     loadData() {
-        const saved = localStorage.getItem('gamehub_games');
-        const savedId = localStorage.getItem('gamehub_nextId');
-        
-        if (saved) {
-            try {
-                this.games = JSON.parse(saved);
-                this.games.forEach(g => {
-                    g.updateDate = new Date(g.updateDate);
-                });
-                this.nextId = savedId ? parseInt(savedId) : this.games.length + 1;
-                console.log(`已加载 ${this.games.length} 条数据`);
-            } catch (e) {
-                console.error('加载数据失败:', e);
-                this.loadSampleData();
+        try {
+            var saved = localStorage.getItem('gamehub_games');
+            var savedId = localStorage.getItem('gamehub_nextId');
+
+            if (saved) {
+                try {
+                    this.games = JSON.parse(saved);
+                    this.games.forEach(function(g) {
+                        g.updateDate = new Date(g.updateDate);
+                    });
+                    this.nextId = savedId ? parseInt(savedId) : this.games.length + 1;
+                    console.log('已加载 ' + this.games.length + ' 条数据');
+                    return;
+                } catch (e) {
+                    console.error('解析本地数据失败:', e);
+                }
             }
-        } else {
-            this.loadSampleData();
+        } catch(e) {
+            console.log('localStorage不可用，使用示例数据');
         }
+        // 无缓存或解析失败时使用示例数据
+        this.loadSampleData();
     },
 
     saveData() {
         try {
             localStorage.setItem('gamehub_games', JSON.stringify(this.games));
             localStorage.setItem('gamehub_nextId', this.nextId.toString());
-            console.log('数据已保存');
         } catch (e) {
-            console.error('保存数据失败:', e);
-            this.showToast('保存失败，存储空间可能已满');
+            // WebView环境localStorage可能不可用，静默处理
+            console.log('保存跳过（存储不可用）');
         }
     },
 
