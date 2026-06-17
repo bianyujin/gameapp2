@@ -41,24 +41,23 @@ const App = {
     })(),
 
     init() {
-        this.isAdmin = localStorage.getItem('gamehub_is_admin') === 'true';
-        this.loadDarkMode();
+        // 安全读取localStorage，WebView环境可能不可用
+        try { this.isAdmin = localStorage.getItem('gamehub_is_admin') === 'true'; } catch(e) { this.isAdmin = false; }
+        try { this.loadDarkMode(); } catch(e) { console.log('loadDarkMode跳过'); }
         this.loadData();
-        this.bindEvents();
-        this.render();  // 先渲染UI，确保按钮可用
-        this.startCarousel();
+        this.bindEvents();   // 确保事件绑定始终执行
+        this.render();       // 确保UI渲染始终执行
+        try { this.startCarousel(); } catch(e) {}
         // WebView 环境跳过网络请求，避免阻塞
         if (!this.isWebViewEnv) {
-            this.loadRandomImage();
-            this.checkGuideBanner();
-            this.autoSync();
-            this.checkForUpdates();
-            this.checkAppVersion();
+            try { this.loadRandomImage(); } catch(e) {}
+            try { this.checkGuideBanner(); } catch(e) {}
+            try { this.autoSync(); } catch(e) {}
+            try { this.checkForUpdates(); } catch(e) {}
+            try { this.checkAppVersion(); } catch(e) {}
         } else {
-            // WebView 环境下隐藏图片占位符，直接用纯色背景
             var ph = document.getElementById('imagePlaceholder');
             if (ph) ph.style.display = 'none';
-            console.log('WebView环境：已跳过网络请求');
         }
         
         const addGameFab = document.getElementById('addGameFab');
@@ -163,13 +162,14 @@ const App = {
     },
 
     loadDarkMode() {
-        const isDarkMode = localStorage.getItem('gamehub_dark_mode') !== 'false';
+        var isDarkMode = true; // 默认暗色
+        try { isDarkMode = localStorage.getItem('gamehub_dark_mode') !== 'false'; } catch(e) {}
         if (isDarkMode) {
             document.body.classList.remove('light-mode');
         } else {
             document.body.classList.add('light-mode');
         }
-        const darkModeToggle = document.getElementById('darkModeToggle');
+        var darkModeToggle = document.getElementById('darkModeToggle');
         if (darkModeToggle) {
             darkModeToggle.checked = isDarkMode;
         }
@@ -178,10 +178,10 @@ const App = {
     toggleDarkMode(isDark) {
         if (isDark) {
             document.body.classList.remove('light-mode');
-            localStorage.setItem('gamehub_dark_mode', 'true');
+            try { localStorage.setItem('gamehub_dark_mode', 'true'); } catch(e) {}
         } else {
             document.body.classList.add('light-mode');
-            localStorage.setItem('gamehub_dark_mode', 'false');
+            try { localStorage.setItem('gamehub_dark_mode', 'false'); } catch(e) {}
         }
     },
 
