@@ -48,7 +48,7 @@ const App = {
         this.bindEvents();   // 确保事件绑定始终执行
         this.render();       // 确保UI渲染始终执行
         try { this.startCarousel(); } catch(e) {}
-        // WebView 环境跳过网络请求，避免阻塞
+        // WebView 环境只跳过外部API请求，同域数据同步保留
         if (!this.isWebViewEnv) {
             try { this.loadRandomImage(); } catch(e) {}
             try { this.checkGuideBanner(); } catch(e) {}
@@ -56,8 +56,12 @@ const App = {
             try { this.checkForUpdates(); } catch(e) {}
             try { this.checkAppVersion(); } catch(e) {}
         } else {
+            // WebView: 跳过外部图片API，但保留同域数据同步
             var ph = document.getElementById('imagePlaceholder');
             if (ph) ph.style.display = 'none';
+            try { this.checkGuideBanner(); } catch(e) {}
+            try { this.autoSync(); } catch(e) {}
+            try { this.checkAppVersion(); } catch(e) {}
         }
         
         const addGameFab = document.getElementById('addGameFab');
@@ -1423,7 +1427,7 @@ const App = {
     },
 
     async checkForUpdates() {
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/games.json';
+        const githubUrl = 'https://bianyujin.github.io/gameapp2/games.json';
         const localVersion = localStorage.getItem('gamehub_local_data_version');
         
         try {
@@ -1471,7 +1475,7 @@ const App = {
 
     async checkAppVersion() {
         try {
-            const configUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/config.json';
+            const configUrl = 'https://bianyujin.github.io/gameapp2/config.json';
             const resp = await fetch(configUrl + '?t=' + Date.now());
             if (!resp.ok) return;
             

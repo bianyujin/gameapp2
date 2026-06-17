@@ -758,7 +758,7 @@ const CloudSync = {
         console.log('=== syncFromCloud开始 ===');
         
         const firebaseUrl = 'https://galgame-a5758-default-rtdb.asia-southeast1.firebasedatabase.app/games.json';
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/games.json';
+        const githubUrl = 'https://bianyujin.github.io/gameapp2/games.json';
         
         this.config.gamesDataVersion = '2026032403';
         this.config.localDataVersion = null;
@@ -1162,7 +1162,7 @@ const CloudSync = {
         this.config.latestVersion = '2.0.0';
         this.config.updateUrl = 'https://pan.baidu.com/s/1cnng925doaegghKTx7Oo3w?pwd=BAYJ';
         this.config.cloudAdminPassword = '520hd123';
-        this.config.gamesDataUrl = 'https://cdn.jsdelivr.net/gh/bianyujin/gameapp2@main/games.json';
+        this.config.gamesDataUrl = 'https://bianyujin.github.io/gameapp2/games.json';
         this.config.gamesDataVersion = '2026032403';
         this.saveConfig();
         console.log('硬编码配置已应用:', this.config);
