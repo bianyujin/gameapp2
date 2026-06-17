@@ -888,8 +888,12 @@ const CloudSync = {
             this.normalizeAllFields(games);
             App.games = games;
             App.nextId = games.length + 1;
-            App.saveData();
+            try { App.saveData(); } catch(e) { console.log('saveData跳过:', e.message); }
+            // 强制渲染，加setTimeout确保DOM更新
             App.render();
+            setTimeout(function() { App.render(); }, 100);
+            console.log('渲染完成，共' + games.length + '条数据');
+            console.log('App.games[0]:', App.games[0] ? App.games[0].title : '空');
             
             this.saveLocalDataVersion(this.config.gamesDataVersion);
             
