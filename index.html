@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#6366f1">
     <title>GAMEACG - 游戏整合平台</title>
-    <link rel="stylesheet" href="css/styles.css?v=21">
+    <link rel="stylesheet" href="css/styles.css?v=22">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -200,21 +200,24 @@
 
     <button class="add-game-fab" id="addGameFab" onclick="App.loadRandomImage()" title="刷新图片">🔄</button>
 
-    <script src="js/app.js?v=21"></script>
-    <script src="js/cloud-sync.js?v=21"></script>
+    <script src="js/app.js?v=22"></script>
+    <script src="js/cloud-sync.js?v=22"></script>
     <script src="js/admin.js?v=2"></script>
     <script src="js/review.js?v=2"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .then((registration) => {
-                            console.log('Service Worker 注册成功:', registration);
-                        })
-                        .catch((error) => {
-                            console.log('Service Worker 注册失败:', error);
-                        });
+                    // 先强制注销旧SW，清除所有缓存，再注册新SW
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        return Promise.all(registrations.map(r => r.unregister()));
+                    }).then(() => {
+                        return navigator.serviceWorker.register('./sw.js?v=' + Date.now());
+                    }).then((registration) => {
+                        console.log('Service Worker 注册成功:', registration);
+                    }).catch((error) => {
+                        console.log('Service Worker 注册失败:', error);
+                    });
                 });
             }
             
