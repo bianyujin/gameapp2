@@ -843,6 +843,13 @@ const CloudSync = {
         
         const data = await response.json();
         
+        // 空数据不覆盖现有数据
+        if (data && Array.isArray(data) && data.length === 0) {
+            console.log('远程数据为空，保留现有数据');
+            App.showToast('云端暂无数据');
+            return;
+        }
+        
         if (data) {
             let games;
             
