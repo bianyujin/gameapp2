@@ -16,7 +16,7 @@ const CloudSync = {
         latestVersion: null,
         updateUrl: null,
         cloudAdminPassword: null,
-        gamesDataUrl: null,
+        gamesDataUrl: 'https://bianyujin.github.io/gameapp2/games.json',
         gamesDataVersion: null,
         localDataVersion: null
     },
@@ -30,20 +30,24 @@ const CloudSync = {
     },
 
     loadConfig() {
-        const saved = localStorage.getItem('gamehub_cloud_config');
-        if (saved) {
-            this.config = { ...this.config, ...JSON.parse(saved) };
+        try {
+            const saved = localStorage.getItem('gamehub_cloud_config');
+            if (saved) {
+                this.config = { ...this.config, ...JSON.parse(saved) };
+            }
+            this.config.localDataVersion = localStorage.getItem('gamehub_local_data_version') || null;
+        } catch(e) {
+            console.log('loadConfig跳过（存储不可用）');
         }
-        this.config.localDataVersion = localStorage.getItem('gamehub_local_data_version') || null;
     },
 
     saveLocalDataVersion(version) {
         this.config.localDataVersion = version;
-        localStorage.setItem('gamehub_local_data_version', version);
+        try { localStorage.setItem('gamehub_local_data_version', version); } catch(e) {}
     },
 
     saveConfig() {
-        localStorage.setItem('gamehub_cloud_config', JSON.stringify(this.config));
+        try { localStorage.setItem('gamehub_cloud_config', JSON.stringify(this.config)); } catch(e) {}
     },
 
     bindEvents() {
@@ -831,17 +835,38 @@ const CloudSync = {
             url = url.replace('github.com/bianyujin/gameapp/releases/download/', 'cdn.jsdelivr.net/gh/bianyujin/gameapp@');
         }
         
+        // 加时间戳防缓存
+        url = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+        
         console.log('请求URL:', url);
-        const response = await fetch(url);
-        console.log('响应状态:', response.status);
-        console.log('响应ok:', response.ok);
         
-        if (!response.ok) {
-            console.error('响应失败, 状态:', response.status);
-            throw new Error('下载失败');
+        let data;
+        try {
+            // 优先用 fetch
+            const response = await fetch(url, { cache: 'no-cache' });
+            console.log('响应状态:', response.status);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            data = await response.json();
+        } catch (fetchErr) {
+            console.log('fetch失败，尝试XMLHttpRequest:', fetchErr.message);
+            // fetch 失败时用 XMLHttpRequest 后备
+            data = await new Promise((resolve, reject) => {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.timeout = 30000;
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try { resolve(JSON.parse(xhr.responseText)); }
+                        catch(e) { reject(new Error('JSON解析失败')); }
+                    } else {
+                        reject(new Error('HTTP ' + xhr.status));
+                    }
+                };
+                xhr.onerror = function() { reject(new Error('网络请求失败')); };
+                xhr.ontimeout = function() { reject(new Error('请求超时')); };
+                xhr.send();
+            });
         }
-        
-        const data = await response.json();
         
         // 空数据不覆盖现有数据
         if (data && Array.isArray(data) && data.length === 0) {
@@ -870,7 +895,7 @@ const CloudSync = {
             
             this.config.lastSync = Date.now();
             this.saveConfig();
-            App.showToast('同步成功');
+            App.showToast('同步成功，共' + games.length + '条');
         }
     },
 
