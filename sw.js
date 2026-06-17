@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gameacg-v2.0';
+const CACHE_NAME = 'gameacg-v2.1';
 const APP_VERSION = '2.0.0';
 
 const urlsToCache = [
