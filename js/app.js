@@ -1618,8 +1618,11 @@ const App = {
     }
 };
 
-// 仅允许移动设备访问，电脑/平板端显示提示
+// 仅允许移动设备访问，电脑/平板端显示提示（调试时临时开放电脑访问）
 (function() {
+    // 临时：调试期间允许电脑访问
+    return;
+    
     const ua = navigator.userAgent.toLowerCase();
     const isAndroid = /android/i.test(ua);
     const isiPhone = /iphone|ipod/i.test(ua);
