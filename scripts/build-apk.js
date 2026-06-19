@@ -79,7 +79,7 @@ async function main() {
     try {
         await runWithAnswers(
             'bubblewrap',
-            ['init', '--manifest', 'https://bianyujin.github.io/gameapp2/manifest.json'],
+            ['init', '--manifest', 'https://bianyujin.github.io/gameapp/manifest.json'],
             [],
             WORK_DIR
         );
